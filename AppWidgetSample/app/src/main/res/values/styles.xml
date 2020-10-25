@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppWidgetSection" parent="@android:style/Widget">
+        <item name="android:padding">8dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:background">@android:color/white</item>
+    </style>
+
+    <style name="AppWidgetLabel" parent="AppWidgetText">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="AppWidgetText">
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+    <style name="AppWidgetButton">
+        <item name="android:backgroundTint">@android:color/white</item>
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+</resources>
