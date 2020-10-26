@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="learning.android.sensorsurvey.MainActivity">
+
+    <item
+        android:id="@+id/change_screen_action"
+        android:orderInCategory="100"
+        android:title="@string/light_and_proximity"
+        app:showAsAction="never" />
+
+</menu>

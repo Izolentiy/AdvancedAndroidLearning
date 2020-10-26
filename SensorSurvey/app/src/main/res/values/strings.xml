@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">SensorSurvey</string>
+    <string name="placeholder">(placeholder)</string>
+    <string name="light_and_proximity">Light and Proximity</string>
+    <string name="sensors_list">List of Sensors</string>
+    <string name="proximity_label">Proximity sensor: %1$.2f</string>
+    <string name="light_label">Light sensor: %1$.2f</string>
+    <string name="error_no_sensor">No sensor</string>
+</resources>
