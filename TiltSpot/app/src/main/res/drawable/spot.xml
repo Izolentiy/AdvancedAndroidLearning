@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape
+    xmlns:andorid="http://schemas.android.com/apk/res/android"
+    andorid:shape="oval">
+    <solid andorid:color="@android:color/black"/>
+</shape>
