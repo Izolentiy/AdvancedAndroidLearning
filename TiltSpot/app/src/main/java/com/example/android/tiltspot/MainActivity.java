@@ -21,26 +21,25 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.Arrays;
+
 public class MainActivity extends AppCompatActivity
         implements SensorEventListener {
 
-    // System sensor manager instance.
-    private SensorManager mSensorManager;
-
-    // Display instance.
-    private Display mDisplay;
-
     // Accelerometer and magnetometer sensors, as retrieved from the
     // sensor manager.
+    private SensorManager mSensorManager;
     private Sensor mSensorAccelerometer;
     private Sensor mSensorMagnetometer;
 
@@ -55,23 +54,26 @@ public class MainActivity extends AppCompatActivity
     private ImageView mSpotRight;
     private ImageView mSpotBottom;
 
+    private CalculateRotationTask mCalculationTask;
+
+    // Variables to hold sensors' data
+    float[] mAccelerometerData = new float[3];
+    float[] mMagnetometerData = new float[3];
+    int mDisplayRotation;
+
     // Very small values for the accelerometer (on all three axes) should
     // be interpreted as 0. This value is the amount of acceptable
     // non-zero drift.
     private static final float VALUE_DRIFT = 0.05f;
-
-    // Variables to hold sensors' data
-    private float[] mAccelerometerData = new float[3];
-    private float[] mMagnetometerData = new float[3];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mTextSensorAzimuth = (TextView) findViewById(R.id.value_azimuth);
-        mTextSensorPitch = (TextView) findViewById(R.id.value_pitch);
-        mTextSensorRoll = (TextView) findViewById(R.id.value_roll);
+        mTextSensorAzimuth = findViewById(R.id.value_azimuth);
+        mTextSensorPitch = findViewById(R.id.value_pitch);
+        mTextSensorRoll = findViewById(R.id.value_roll);
 
         mSpotTop = findViewById(R.id.spot_top);
         mSpotLeft = findViewById(R.id.spot_left);
@@ -88,9 +90,18 @@ public class MainActivity extends AppCompatActivity
         mSensorMagnetometer = mSensorManager.getDefaultSensor(
                 Sensor.TYPE_MAGNETIC_FIELD);
 
-        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mDisplay = wm.getDefaultDisplay();
+        mDisplayRotation = ((WindowManager)getSystemService(WINDOW_SERVICE))
+                .getDefaultDisplay().getRotation();
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mCalculationTask != null) {
+            mCalculationTask.cancel(true);
+            mCalculationTask = null;
+        }
+        super.onDestroy();
     }
 
     /**
@@ -127,49 +138,19 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+    }
+
+    @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        int sensorType = sensorEvent.sensor.getType();
-        switch (sensorType) {
-            case Sensor.TYPE_ACCELEROMETER:
-                mAccelerometerData = sensorEvent.values.clone();
-                break;
-            case Sensor.TYPE_MAGNETIC_FIELD:
-                mMagnetometerData = sensorEvent.values.clone();
-                break;
-            default:
-                return;
-        }
-        float[] rotationMatrix = new float[9];
-        boolean rotationOk = SensorManager.getRotationMatrix
-                (rotationMatrix, null, mAccelerometerData, mMagnetometerData);
+        mCalculationTask = (CalculateRotationTask)
+                new CalculateRotationTask().execute(sensorEvent);
+    }
 
-        float[] rotationMatrixAdjusted = new float[9];
-        switch (mDisplay.getRotation()) {
-            case Surface.ROTATION_0:
-                rotationMatrixAdjusted = rotationMatrix.clone();
-                break;
-            case Surface.ROTATION_90:
-                SensorManager.remapCoordinateSystem(
-                        rotationMatrix, SensorManager.AXIS_Y,
-                        SensorManager.AXIS_MINUS_X, rotationMatrixAdjusted);
-                break;
-            case Surface.ROTATION_180:
-                SensorManager.remapCoordinateSystem(
-                        rotationMatrix, SensorManager.AXIS_MINUS_X,
-                        SensorManager.AXIS_MINUS_Y, rotationMatrixAdjusted);
-            case Surface.ROTATION_270:
-                SensorManager.remapCoordinateSystem(
-                        rotationMatrix, SensorManager.AXIS_MINUS_Y,
-                        SensorManager.AXIS_X, rotationMatrixAdjusted);
-        }
-
-        float[] orientationValues = new float[3];
-        if (rotationOk)
-            SensorManager.getOrientation(rotationMatrixAdjusted, orientationValues);
-
-        float azimuth = orientationValues[0];
-        float pitch = orientationValues[1];
-        float roll = orientationValues[2];
+    public void updateUI(CalculateRotationTask.Result result) {
+        float azimuth = result.orientationValues[0];
+        float pitch = result.orientationValues[1];
+        float roll = result.orientationValues[2];
 
         mTextSensorAzimuth.setText
                 (getResources().getString(R.string.value_format, azimuth));
@@ -200,11 +181,64 @@ public class MainActivity extends AppCompatActivity
             mSpotRight.setAlpha(Math.abs(roll));
     }
 
-    /**
-     * Must be implemented to satisfy the SensorEventListener interface;
-     * unused in this app.
-     */
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
+    private class CalculateRotationTask
+            extends AsyncTask<SensorEvent, Void, CalculateRotationTask.Result>{
+
+        /**
+         * Wrapper class for result
+         */
+        class Result {
+            public float[] orientationValues;
+            public Result(float[] values) {
+                orientationValues = values;
+            }
+        }
+
+        @Override
+        protected Result doInBackground(SensorEvent... sensorEvents) {
+            int sensorType = sensorEvents[0].sensor.getType();
+            switch (sensorType) {
+                case Sensor.TYPE_ACCELEROMETER:
+                    mAccelerometerData = sensorEvents[0].values.clone();
+                    break;
+                case Sensor.TYPE_MAGNETIC_FIELD:
+                    mMagnetometerData = sensorEvents[0].values.clone();
+                    break;
+            }
+            float[] rotationMatrix = new float[9];
+            boolean rotationOk = SensorManager.getRotationMatrix
+                    (rotationMatrix, null, mAccelerometerData, mMagnetometerData);
+
+            float[] rotationMatrixAdjusted = new float[9];
+            switch (mDisplayRotation) {
+                case Surface.ROTATION_0:
+                    rotationMatrixAdjusted = rotationMatrix.clone();
+                    break;
+                case Surface.ROTATION_90:
+                    SensorManager.remapCoordinateSystem(
+                            rotationMatrix, SensorManager.AXIS_Y,
+                            SensorManager.AXIS_MINUS_X, rotationMatrixAdjusted);
+                    break;
+                case Surface.ROTATION_180:
+                    SensorManager.remapCoordinateSystem(
+                            rotationMatrix, SensorManager.AXIS_MINUS_X,
+                            SensorManager.AXIS_MINUS_Y, rotationMatrixAdjusted);
+                case Surface.ROTATION_270:
+                    SensorManager.remapCoordinateSystem(
+                            rotationMatrix, SensorManager.AXIS_MINUS_Y,
+                            SensorManager.AXIS_X, rotationMatrixAdjusted);
+            }
+
+            float[] orientationValues = new float[3];
+            if (rotationOk)
+                SensorManager.getOrientation(rotationMatrixAdjusted, orientationValues);
+            return new Result(orientationValues);
+        }
+
+        @Override
+        protected void onPostExecute(Result result) {
+            if (result != null)
+                updateUI(result);
+        }
     }
 }
