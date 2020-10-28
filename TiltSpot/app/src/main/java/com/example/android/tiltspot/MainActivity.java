@@ -17,7 +17,6 @@
 package com.example.android.tiltspot;
 
 import android.content.Context;
-import android.content.pm.ActivityInfo;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -25,6 +24,9 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -33,6 +35,9 @@ public class MainActivity extends AppCompatActivity
 
     // System sensor manager instance.
     private SensorManager mSensorManager;
+
+    // Display instance.
+    private Display mDisplay;
 
     // Accelerometer and magnetometer sensors, as retrieved from the
     // sensor manager.
@@ -64,9 +69,6 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Lock the orientation to portrait (for now)
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
         mTextSensorAzimuth = (TextView) findViewById(R.id.value_azimuth);
         mTextSensorPitch = (TextView) findViewById(R.id.value_pitch);
         mTextSensorRoll = (TextView) findViewById(R.id.value_roll);
@@ -85,6 +87,10 @@ public class MainActivity extends AppCompatActivity
                 Sensor.TYPE_ACCELEROMETER);
         mSensorMagnetometer = mSensorManager.getDefaultSensor(
                 Sensor.TYPE_MAGNETIC_FIELD);
+
+        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mDisplay = wm.getDefaultDisplay();
+
     }
 
     /**
@@ -137,9 +143,29 @@ public class MainActivity extends AppCompatActivity
         boolean rotationOk = SensorManager.getRotationMatrix
                 (rotationMatrix, null, mAccelerometerData, mMagnetometerData);
 
+        float[] rotationMatrixAdjusted = new float[9];
+        switch (mDisplay.getRotation()) {
+            case Surface.ROTATION_0:
+                rotationMatrixAdjusted = rotationMatrix.clone();
+                break;
+            case Surface.ROTATION_90:
+                SensorManager.remapCoordinateSystem(
+                        rotationMatrix, SensorManager.AXIS_Y,
+                        SensorManager.AXIS_MINUS_X, rotationMatrixAdjusted);
+                break;
+            case Surface.ROTATION_180:
+                SensorManager.remapCoordinateSystem(
+                        rotationMatrix, SensorManager.AXIS_MINUS_X,
+                        SensorManager.AXIS_MINUS_Y, rotationMatrixAdjusted);
+            case Surface.ROTATION_270:
+                SensorManager.remapCoordinateSystem(
+                        rotationMatrix, SensorManager.AXIS_MINUS_Y,
+                        SensorManager.AXIS_X, rotationMatrixAdjusted);
+        }
+
         float[] orientationValues = new float[3];
         if (rotationOk)
-            SensorManager.getOrientation(rotationMatrix, orientationValues);
+            SensorManager.getOrientation(rotationMatrixAdjusted, orientationValues);
 
         float azimuth = orientationValues[0];
         float pitch = orientationValues[1];
