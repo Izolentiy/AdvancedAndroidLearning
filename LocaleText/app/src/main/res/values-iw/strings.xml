@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LocaleText</string>
+    <string name="nougat">חבילת ממתקים נוגט</string>
+    <string name="help_text">אם אתה צריך עזרה, צור קשר עם מחלקת התמיכה שלנו.</string>
+    <string name="dial_log_message">לא יכול לפתור אפליקציה לכוונה מובנית.</string>
+    <string name="action_help">הצילו!</string>
+    <string name="description">נוגט (באנגלית: Nougat) היא משפחת קונפיקטים שעשויה מסוכר או דבש, אגוזים קלויים (שקדים, אגוזי מלך, פיסטוקים, אגוזי לוז ואגוזי מקדמיה נפוצים), חלבון ביצה קצוץ ולפעמים פירות מסוכרים. הוא משמש למגוון של ממתקים ושוקולדים.</string>
+    <string name="action_language">שפה</string>
+</resources>

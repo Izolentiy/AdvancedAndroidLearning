@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LocaleText</string>
+    <string name="description">Нуга-это семейство кондитерских изделий из сахара или меда, жареных грецких орехов (распространены миндаль, грецкие орехи, фисташки, фундук и орехи макадамии), взбитые яичные белки и иногда нарезанные цукаты. Он используется в различных конфетах и конфетах.</string>
+    <string name="nougat">Упаковка конфет с нугой</string>
+    <string name="help_text">Если вам нужна помощь, обратитесь в наш отдел поддержки.</string>
+    <string name="dial_log_message">Не найдено приложение для ACTION_DIAL.</string>
+    <string name="action_help">Помощь</string>
+    <string name="action_language">Язык</string>
+</resources>
