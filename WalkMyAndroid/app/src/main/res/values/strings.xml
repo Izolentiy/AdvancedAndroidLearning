@@ -23,5 +23,9 @@
         Location permission denied</string>
     <string name="location_text">Latitude: %1$.4f \n Longitude: %2$.4f
         \n Timestamp: %3$tr</string>
+    <string name="address_text">Address: %1$s \n Timestamp: %2$tr</string>
     <string name="no_location">No location</string>
+    <string name="service_not_available">Service not available</string>
+    <string name="ivalid_args">Invalid latitude or longitude</string>
+    <string name="no_address_found">No address found</string>
 </resources>

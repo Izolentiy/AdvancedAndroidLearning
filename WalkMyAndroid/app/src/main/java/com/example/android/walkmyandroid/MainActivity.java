@@ -24,6 +24,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,14 +33,17 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements FetchAddressTask.OnTaskCompleted {
 
     private static final int REQUEST_LOCATION_PERMISSION = 0;
     private static final String TAG = "MainActivityTAG";
 
     private FusedLocationProviderClient mFusedLocationClient;
     private Location mLastLocation;
+
+    // View variables
     private TextView mLocationTextView;
+    private Button mGetLocationButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +51,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mLocationTextView = findViewById(R.id.textview_location);
+        mGetLocationButton = findViewById(R.id.button_location);
+        mGetLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getLocation();
+            }
+        });
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
@@ -83,17 +95,34 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess(Location location) {
                     if (location != null) {
-                        mLastLocation = location;
-                        mLocationTextView.setText(
-                                getString(R.string.location_text,
-                                        mLastLocation.getLatitude(),
-                                        mLastLocation.getLongitude(),
-                                        mLastLocation.getTime()));
+                        // Start the reverse geocode AsyncTask
+                        new FetchAddressTask(MainActivity.this,
+                                MainActivity.this).execute(location);
+
+//                        // Get the location in longitude and latitude
+//                        mLastLocation = location;
+//                        mLocationTextView.setText(
+//                                getString(R.string.location_text,
+//                                        mLastLocation.getLatitude(),
+//                                        mLastLocation.getLongitude(),
+//                                        mLastLocation.getTime()));
                     } else {
                         mLocationTextView.setText(R.string.no_location);
                     }
                 }
             });
         }
+
+        // Set up the loading text
+        mLocationTextView.setText(getString(
+                R.string.address_text, "Loading",
+                System.currentTimeMillis()));
+    }
+
+    @Override
+    public void onTaskCompleted(String result) {
+        // Update the UI
+        mLocationTextView.setText(getString(
+                R.string.address_text, result, System.currentTimeMillis()));
     }
 }
