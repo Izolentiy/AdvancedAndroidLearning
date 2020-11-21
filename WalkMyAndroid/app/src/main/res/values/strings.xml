@@ -30,4 +30,5 @@
     <string name="ivalid_args">Invalid latitude or longitude</string>
     <string name="no_address_found">No address found</string>
     <string name="stop_tracking_location">Stop tracking location</string>
+    <string name="issue_occurred">Some issue is occurred</string>
 </resources>

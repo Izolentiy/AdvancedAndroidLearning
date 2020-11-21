@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
     private static final String TRACKING_LOCATION_KEY = "tracking_location";
 
     private FusedLocationProviderClient mFusedLocationClient;
-    private Location mLastLocation;
     private LocationCallback mLocationCallback;
     private boolean mTrackingLocation = false;
 
@@ -163,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements FetchAddressTask.
 //                                        mLastLocation.getLongitude(),
 //                                        mLastLocation.getTime()));
                     } else {
-                        mLocationTextView.setText(R.string.no_location);
+                        mLocationTextView.setText(R.string.issue_occurred);
                     }
                 }
             });

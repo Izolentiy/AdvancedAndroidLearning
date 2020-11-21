@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -18,19 +19,20 @@ public class FetchAddressTask extends AsyncTask<Location, Void, String> {
         void onTaskCompleted(String result);
     }
 
-    private final String TAG = "FetchAddressTaskTAG";
+    private static final String TAG = "FetchAddressTaskTAG";
 
-    private Context mContext;
-    private OnTaskCompleted mListener;
+    private final WeakReference<Context> mContext;
+    private final OnTaskCompleted mListener;
 
     public FetchAddressTask(Context applicationContext, OnTaskCompleted listener) {
-        mContext = applicationContext;
+        mContext = new WeakReference<>(applicationContext);
         mListener = listener;
     }
 
     @Override
     protected String doInBackground(Location... locations) {
-        Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
+        Context context = mContext.get();
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         Location location = locations[0];
 
         List<Address> addresses = null;
@@ -41,17 +43,17 @@ public class FetchAddressTask extends AsyncTask<Location, Void, String> {
                     location.getLatitude(), location.getLongitude(), 1);
         } catch (IOException ioException) {
             // Catch network of other I/O problems
-            resultMessage = mContext.getString(R.string.service_not_available);
+            resultMessage = context.getString(R.string.service_not_available);
             Log.d(TAG, resultMessage, ioException);
         } catch (IllegalArgumentException illegalArgumentException) {
             // Catch invalid longitude or latitude values
-            resultMessage = mContext.getString(R.string.ivalid_args);
+            resultMessage = context.getString(R.string.ivalid_args);
             Log.d(TAG, resultMessage, illegalArgumentException);
         }
 
         if (addresses == null || addresses.size() == 0) {
             if (resultMessage.isEmpty()) {
-                resultMessage = mContext.getString(R.string.no_address_found);
+                resultMessage = context.getString(R.string.no_address_found);
                 Log.d(TAG, resultMessage);
             }
         } else {
