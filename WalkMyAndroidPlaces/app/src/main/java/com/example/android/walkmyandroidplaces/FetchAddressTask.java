@@ -34,22 +34,24 @@ import java.util.Locale;
  */
 class FetchAddressTask extends AsyncTask<Location, Void, String> {
 
-    private Context mContext;
-    private OnTaskCompleted mListener;
+    private final Context mContext;
+    private final OnTaskCompleted mListener;
 
+    private final String TAG = FetchAddressTask.class.getSimpleName();
 
     FetchAddressTask(Context applicationContext, OnTaskCompleted listener) {
         mContext = applicationContext;
         mListener = listener;
     }
 
-    private final String TAG = FetchAddressTask.class.getSimpleName();
-
+    /**
+     * Core method where all of the work is done
+     * @param params It takes the coordinates as a param
+     */
     @Override
     protected String doInBackground(Location... params) {
         // Set up the geocoder
-        Geocoder geocoder = new Geocoder(mContext,
-                Locale.getDefault());
+        Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
 
         // Get the passed in location
         Location location = params[0];

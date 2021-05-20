@@ -25,6 +25,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.util.Log;
 import android.view.View;
@@ -39,6 +40,7 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.PlaceLikelihood;
@@ -49,6 +51,8 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainActivity extends AppCompatActivity implements
         FetchAddressTask.OnTaskCompleted {
@@ -138,29 +142,7 @@ public class MainActivity extends AppCompatActivity implements
             }
         };
 
-        // Use fields to define the data types to return.
-        List<Place.Field> placeFields = Arrays.asList(Place.Field.NAME);
-
-        // Use the builder to create a FinCurrentPlaceRequest.
-        FindCurrentPlaceRequest request =
-                FindCurrentPlaceRequest.builder(placeFields).build();
-
-        // Call findCurrentPlace and handle the response
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        mPlacesClient.findCurrentPlace(request)
-                .addOnSuccessListener(this::onSuccess)
-                .addOnFailureListener(this::onFailure);
+//        getCurrentLocation();
     }
 
     @Override
@@ -198,20 +180,20 @@ public class MainActivity extends AppCompatActivity implements
      */
     private void startTrackingLocation() {
         if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
+                ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]
-                            {Manifest.permission.ACCESS_FINE_LOCATION},
+                            {ACCESS_FINE_LOCATION},
                     REQUEST_LOCATION_PERMISSION);
         } else {
+            getCurrentLocation();
             mTrackingLocation = true;
             mFusedLocationClient.requestLocationUpdates
                     (getLocationRequest(),
                             mLocationCallback,
                             null /* Looper */);
 
-            // Set a loading text while you wait for the address to be
-            // returned
+            // Set a loading text while you wait for the address to be returned
             mLocationTextView.setText(getString(R.string.address_text,
                     getString(R.string.loading),
                     getString(R.string.loading),
@@ -284,18 +266,42 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onTaskCompleted(String result) {
         if (mTrackingLocation) {
-
-
             // Update the UI
             mLocationTextView.setText(getString(R.string.address_text,
-                            result, System.currentTimeMillis()));
+                            "...",result, System.currentTimeMillis()));
+        }
+    }
+
+    /**
+     * Get current location using Places SDK
+     */
+    private void getCurrentLocation() {
+        // Use fields to define the data types to return.
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.NAME);
+
+        // Use the builder to create a FinCurrentPlaceRequest.
+        FindCurrentPlaceRequest request =
+                FindCurrentPlaceRequest.builder(placeFields).build();
+
+        // Call findCurrentPlace and handle the response
+        // (first check that the user has granted permission)
+        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            Task<FindCurrentPlaceResponse> placeResponse = mPlacesClient.findCurrentPlace(request);
+            placeResponse
+                    .addOnSuccessListener(this::onSuccess)
+                    .addOnFailureListener(this::onFailure);
+        } else {
+            // Get location permission.
+            Log.d(TAG, "Have no location permission");
+//            getLocationPermission();
         }
     }
 
     private void onFailure(Exception exception) {
         if (exception instanceof ApiException) {
             ApiException apiException = (ApiException) exception;
-            Log.e(TAG, "Place not found: " + apiException.getStatusCode());
+            Log.e(TAG, "Place not found. Status code: " + apiException.getStatusCode());
         }
     }
 
@@ -306,7 +312,7 @@ public class MainActivity extends AppCompatActivity implements
                     placeLikelihood.getLikelihood()));
             mLocationTextView.setText(getString(R.string.address_text,
                     placeLikelihood.getPlace().getName(),
-                    placeLikelihood.getPlace().getAddress(),
+                    placeLikelihood.getPlace().getAddress(),  // This place may cause problems
                     System.currentTimeMillis()));
 //            mLocationTextView.append(String.format(
 //                    Locale.US, "Place: '%s' has likelihood: %f\n",
